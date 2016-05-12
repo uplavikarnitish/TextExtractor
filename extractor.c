@@ -10,6 +10,8 @@
 #define E_TEXT_TAG "</TEXT>"
 #define REPORT_E "report_end"
 
+#define STEM_ALGO_BIN_F_PATH "./stem"
+
 int remove_non_chars( char * line )
 {
 	int i;
@@ -157,6 +159,7 @@ int main(int argc, char *args[])
 	char *line = NULL, *rec_tg_st, *rec_tg_cl_inv;
 	size_t size = 0, n;
 	int record=0, text=0;
+	char system_command[512];
 
 	if (argc != 3)
 	{
@@ -216,7 +219,24 @@ int main(int argc, char *args[])
 				fprintf(stderr, "%s:%d:: ERROR! Closing file, errno:%d!\n", __func__, __LINE__, err);
 				goto exit;
 			}
-			//Now remove 
+			//Now convert the temporary file using the Porter Stemmer http://tartarus.org/martin/PorterStemmer/c_thread_safe.txt 
+			//algorithm for all the words to appear in their stemmed form.
+			//Create stemming command
+			snprintf(system_command, sizeof(system_command), "%s %s > %s", STEM_ALGO_BIN_F_PATH, file_name_to_write_temp, file_name_to_write);
+			if ( (err = system(system_command))!=0 )
+			{
+				fprintf(stderr, "%s:%d:: ERROR! Executing system command %s; errno:%d!\n", __func__, __LINE__, system_command, err);
+				goto exit;
+				
+			}
+			//Now remove the intermediate file
+			snprintf(system_command, sizeof(system_command), "rm %s", file_name_to_write_temp);
+			if ( (err = system(system_command))!=0 )
+			{
+				fprintf(stderr, "%s:%d:: ERROR! Executing system command %s; errno:%d!\n", __func__, __LINE__, system_command, err);
+				goto exit;
+				
+			}
 			//printf("==Text==for=====Record ID = %d completed!=============\n", id);
 			continue; //If text on this same line then it will be discarded. If you want to use it, then read word by word using scanf("%s", addr), instead of getline
 		}
